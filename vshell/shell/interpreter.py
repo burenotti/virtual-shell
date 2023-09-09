@@ -2,8 +2,6 @@ import pathlib
 import re
 import sys
 import typing
-from contextlib import suppress
-from dataclasses import dataclass
 from typing import Protocol, TextIO, Callable
 
 
@@ -12,7 +10,18 @@ class ParseError(Exception):
 
 
 class FileSystem(Protocol):
-    pass
+
+    def exists(self, path: str) -> bool:
+        ...
+
+    def is_file(self, path: str) -> bool:
+        ...
+
+    def is_dir(self, path: str) -> bool:
+        ...
+
+    def open(self, path) -> typing.IO[bytes]:
+        ...
 
 
 class ShellError(Exception):
@@ -23,6 +32,9 @@ class ShellContext(Protocol):
     cwd: str
     stdin: TextIO
     stdout: TextIO
+
+    def open(self, path: str) -> typing.IO[bytes]:
+        ...
 
 
 CommandFunc = Callable[[list[str], ShellContext], bool]
@@ -42,7 +54,7 @@ class ShellInterpreter:
         self.stdout = stdout
         self.stderr = stderr
         self._commands: dict[str, CommandFunc] = {}
-        self.current_dir = "/"
+        self.current_dir = self.fs.root()
         self._exited = False
 
     @property
@@ -71,9 +83,6 @@ class ShellInterpreter:
     def parse_prompt(self, prompt: str) -> list[str]:
         args = re.split(r"\s+", prompt)
         return [arg for arg in args if arg]
-
-    def unpack_template(self, ) -> list[str]:
-        pass
 
     def run(self) -> None:
         while not self._exited:

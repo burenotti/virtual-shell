@@ -43,13 +43,13 @@ def run(args: Sequence[str]) -> None:
     @shell.command(['ls'])
     def ls(args: list[str], ctx: ShellContext) -> bool:
         if len(args) == 1:
-            sys.stderr.write("provide dir\n")
-            return False
+            args.append(ctx.cwd)
+
         if len(args) > 2:
             sys.stderr.write("too many arguments\n")
             return False
         try:
-            for res in ctx.fs.find_template(args[1]):
+            for res in ctx.fs.list_dir(args[1]):
                 sys.stdout.write(res)
                 sys.stdout.write('\n')
             return True
